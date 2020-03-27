@@ -33,7 +33,6 @@ RUN set -x; \
             python3-paramiko \
             python3-xmltodict \
             xz-utils \
-	    default-jre \
         && curl -o wkhtmltox.deb -sSL https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.stretch_amd64.deb \
         && echo '7e35a63f9db14f93ec7feeb0fce76b30c08f2057 wkhtmltox.deb' | sha1sum -c - \
         && dpkg --force-depends -i wkhtmltox.deb\
@@ -53,6 +52,12 @@ RUN set -x; \
         && apt-get install -y postgresql-client \
         && rm -rf /var/lib/apt/lists/*
 
+# install  java jre
+RUN set -x; \
+    #rm -i /var/lib/apt/lists/* \
+    apt-get update \
+    && apt-get install -y default-jre
+
 # Install rtlcss
 RUN set -x; \
     npm install -g rtlcss
@@ -67,7 +72,8 @@ RUN set -x; \
         && dpkg --force-depends -i odoo.deb \
         && apt-get update \
         && apt-get -y install -f --no-install-recommends \
-        && rm -rf /var/lib/apt/lists/* odoo.deb
+        && rm -rf /var/lib/apt/lists/* odoo.deb \
+        && useradd odoo
 
 # Copy entrypoint script and Odoo configuration file
 COPY ./entrypoint.sh /
@@ -88,6 +94,8 @@ EXPOSE 8069 8071
 ENV ODOO_RC /etc/odoo/odoo.conf
 
 COPY wait-for-psql.py /usr/local/bin/wait-for-psql.py
+
+RUN chown odoo /usr/local/bin/wait-for-psql.py
 
 # Set default user when running the container
 USER odoo
